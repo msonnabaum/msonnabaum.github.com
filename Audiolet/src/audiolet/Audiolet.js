@@ -6929,16 +6929,10 @@ function Sink(readFn, channelCount, preBufferSize, sampleRate){
 	for (dev in sinks){
 		if (sinks.hasOwnProperty(dev) && sinks[dev].enabled){
 			try{
-  console.log("SUCCESS");
-    console.dir(dev);
 				return new sinks[dev](readFn, channelCount, preBufferSize, sampleRate);
 			} catch(e1){}
 		}
 	}
-
-  console.log("FAIL");
-    console.dir(dev);
-    console.dir(sinks);
 	throw "No audio sink available.";
 }
 

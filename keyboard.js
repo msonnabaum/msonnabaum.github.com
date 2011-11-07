@@ -1,14 +1,4 @@
-(function(){
-    // remove layerX and layerY
-    var all = $.event.props,
-        len = all.length,
-        res = [];
-    while (len--) {
-      var el = all[len];
-      if (el != 'layerX' && el != 'layerY') res.push(el);
-    }
-    $.event.props = res;
-}());
+
 function Keyboard(numOctaves) {
   this.keys = {};
 
@@ -38,12 +28,14 @@ function Keyboard(numOctaves) {
     '186', // ;
   ];
 
-  $('body').append('<div id="keyboard"></div>');
+  $('body').append('<div id="keyboard"><div id="keys-playable"><div id="keys-wrapper"></div></div></div>');
 
   var numOctaves = numOctaves || 4;
   this.pos = numOctaves / 2;
-  //         A  Bb B  C  C# D  Eb E  F  F# G  G#
-  var pat = [0, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1];
+  ////         A  Bb B  C  C# D  Eb E  F  F# G  G#
+  //var pat = [0, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1];
+  //         C  C# D  Eb E  F  F# G  G# A  Bb B
+  var pat = [2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 1, 0];
   var pitch = 9 + (((8 - numOctaves) / 2) * 12);
   var keys = [];
   keyMapId = 0;
@@ -69,13 +61,14 @@ function Keyboard(numOctaves) {
     keys.push('<div style="clear:right"></div></div>');
     keys.push('<div id="octave-wrapper-' + i + '" class="octave_wrapper">');
   };
-  $('#keyboard').append(keys.join(""));
+  $('#keys-wrapper').append(keys.join(""));
 
   $('#octave-wrapper-' + this.pos).addClass('active-octave');
 
   var that = this;
   $(document).keydown(function(e) {
     var keyCode = e.which;
+    // Move range up/down.
     if ($.inArray(keyCode, [37,39]) >= 0) {
       switch(keyCode) {
         case 37:
@@ -87,18 +80,24 @@ function Keyboard(numOctaves) {
       }
       $('.active-octave').removeClass('active-octave');
       $('#octave-wrapper-' + that.pos).addClass('active-octave');
+      // Only allow a negative margin here to keep it inside the box.
+      var margin_left = -430 * that.pos;
+      if (margin_left <= 0) {
+        $('#keys-wrapper').css('margin-left', margin_left);
+      }
     }
+    // Play a key
     else if ($.inArray(keyCode.toString(), that.keysAvail) >= 0) {
-    // For some reason keydown sends repeatedly if held down.
-    if (that.keyState[keyCode] != 1) {
-      that.keyState[keyCode] = 1;
-      //key = that.keyMap[keyCode];
-      key = that.keyMap[keyCode] + (12 * that.pos);
-      $('#' + key + ".white").addClass("white-down");
-      $('#' + key + ".black").addClass("black-down");
-      that.down(key);
+      // For some reason keydown sends repeatedly if held down.
+      if (that.keyState[keyCode] != 1) {
+        that.keyState[keyCode] = 1;
+        //key = that.keyMap[keyCode];
+        key = that.keyMap[keyCode] + (12 * that.pos);
+        $('#' + key + ".white").addClass("white-down");
+        $('#' + key + ".black").addClass("black-down");
+        that.down(key);
+      }
     }
-  }
   }).keyup(function(e) {
     var keyCode = e.which;
     if ($.inArray(keyCode.toString(), that.keysAvail) >= 0) {
@@ -115,20 +114,9 @@ Keyboard.prototype.play = function(keyId) {
 }
 
 Keyboard.prototype.up = function(keyId) {
-  this.keys[keyId].off();
+  ee.emit('noteOff', [keyId]);
 }
 
 Keyboard.prototype.down = function(keyId) {
-  if (!(keyId in this.keys)) {
-    this.keys[keyId] = new Note(keyId);
-  }
-  this.keys[keyId].on();
+  ee.emit('noteOn', [keyId]);
 }
-
-
-$(document).ready(function() {
-
-
-  keys = new Keyboard(6);
-});
-

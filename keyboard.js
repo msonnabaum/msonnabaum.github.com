@@ -36,7 +36,7 @@ function Keyboard(numOctaves) {
   //var pat = [0, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1];
   //         C  C# D  Eb E  F  F# G  G# A  Bb B
   var pat = [2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 1, 0];
-  var pitch = 9 + (((8 - numOctaves) / 2) * 12);
+  var pitch = 12 + (((8 - numOctaves) / 2) * 12);
   var keys = [];
   keyMapId = 0;
   keys.push('<div id="octave-wrapper-0" class="octave_wrapper">');

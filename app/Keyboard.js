@@ -36,8 +36,6 @@ function Keyboard(numOctaves) {
 
   var numOctaves = numOctaves || 4;
   this.pos = numOctaves / 2;
-  ////         A  Bb B  C  C# D  Eb E  F  F# G  G#
-  //var pat = [0, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1];
   //         C  C# D  Eb E  F  F# G  G# A  Bb B
   var pat = [2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 1, 0];
   var pitch = 12 + (((8 - numOctaves) / 2) * 12);
@@ -72,7 +70,6 @@ function Keyboard(numOctaves) {
   var that = this;
   $(document).keydown(function(e) {
     var keyCode = e.which;
-    console.log(keyCode);
     // Move range up/down with -/+.
     if ($.inArray(keyCode, [189,187]) >= 0) {
       switch(keyCode) {

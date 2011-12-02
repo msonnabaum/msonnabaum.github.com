@@ -4,7 +4,7 @@
  */
  function Note(pitch) {
   this.pitch = pitch;
-  this.etfreq = 440 * Math.pow(2, ((this.pitch - 60)/12));
+  this.etfreq = 440 * Math.pow(2, ((this.pitch - 69)/12));
   this.freq = this.etfreq;
   this.synth = null;
 }

@@ -24,6 +24,7 @@
     .script("app/Note.js")
     .script("app/Tunings.js")
     .script("app/Keyboard.js")
+    /*
     .script("http://localhost:8089/socket.io/socket.io.js").wait(function() {
       var socket = io.connect('http://localhost:8089');
       socket.on('noteOn', function (data) {
@@ -37,6 +38,7 @@
         ee.emit('tuningSetPitch', [data.pitch, data.offset]);
       });
     })
+    */
     .script("main.js")
     </script>
     <link rel="stylesheet" href="vendor/normalize.css/normalize.css" type="text/css" media="screen" />

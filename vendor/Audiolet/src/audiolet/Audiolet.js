@@ -6933,6 +6933,7 @@ function Sink(readFn, channelCount, preBufferSize, sampleRate){
 			} catch(e1){}
 		}
 	}
+
 	throw "No audio sink available.";
 }
 

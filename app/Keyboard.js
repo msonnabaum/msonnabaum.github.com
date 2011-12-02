@@ -1,5 +1,9 @@
-
+/**
+ * @constructor
+ */
 function Keyboard(numOctaves) {
+  _.extend(this, Backbone.Events);
+
   this.keys = {};
 
   this.keyState = {};
@@ -28,7 +32,7 @@ function Keyboard(numOctaves) {
     '186', // ;
   ];
 
-  $('body').append('<div id="keyboard"><div id="keys-playable"><div id="keys-wrapper"></div></div></div>');
+  $('#page').append('<div id="keyboard"><div id="keys-playable"><div id="keys-wrapper"></div></div></div>');
 
   var numOctaves = numOctaves || 4;
   this.pos = numOctaves / 2;
@@ -68,13 +72,14 @@ function Keyboard(numOctaves) {
   var that = this;
   $(document).keydown(function(e) {
     var keyCode = e.which;
-    // Move range up/down.
-    if ($.inArray(keyCode, [37,39]) >= 0) {
+    console.log(keyCode);
+    // Move range up/down with -/+.
+    if ($.inArray(keyCode, [189,187]) >= 0) {
       switch(keyCode) {
-        case 37:
+        case 189:
           that.pos--;
           break;
-        case 39:
+        case 187:
           that.pos++;
           break;
       }
@@ -114,9 +119,10 @@ Keyboard.prototype.play = function(keyId) {
 }
 
 Keyboard.prototype.up = function(keyId) {
-  ee.emit('noteOff', [keyId]);
+  this.trigger('noteOff', [keyId]);
+  Backbone.Events.trigger('noteOff', [keyId]);
 }
 
 Keyboard.prototype.down = function(keyId) {
-  ee.emit('noteOn', [keyId]);
+  this.trigger('noteOn', [keyId]);
 }

@@ -1,103 +1,6 @@
 var ee = new EventEmitter();
 var audiolet = new Audiolet();
 
-function Tunings(limit) {
-  this.primes = [1, 3, 5, 7, 11, 13, 19];
-  this.limit = limit || 19;
-  this.ratios = [];
-  //this.generateRatios();
-}
-
-Tunings.prototype.nearestLowerPow2 = function(n) {
-  var m = n;
-  for(var i = 0; m > 1; i++) {
-    m = m >>> 1;
-  }
-  return 1 << i;
-}
-
-Tunings.prototype.generateRatios = function() {
-  //for (var i = 0; i < this.primes.length; i++) {
-  for (var i = 1; i < this.limit; i + 2) {
-    var n = this.primes[i];
-    if (n == 1) {
-      this.ratios['1:1'] = 1;
-    }
-    else {
-      var d = this.nearestLowerPow2(n);
-      this.ratios[n + ':' + d] = n/d;
-      this.ratios[d + ':' + n] = d/n;
-    }
-  }
-}
-
-Tunings.prototype.setTuning = function(tuning) {
-  $('.key').each(function() {
-    var keyId = $(this).attr("id");
-    switch (tuning) {
-      case "et":
-        ee.emit('tuningSetPitch', [keyId, 0]);
-        break;
-      case "5-limit":
-        var fiveLimit = {
-          0: [1,1],
-          1: [25,32],
-          2: [9,8],
-          3: [6,5],
-          4: [5,4],
-          5: [4,3],
-          6: [25,24],
-          7: [3,2],
-          8: [2,24],
-          9: [8,5],
-          10: [25,24],
-          11: [25,24],
-        }
-
-        var base = keyId - (keyId % 12);
-        var ratio = fiveLimit[keyId % 12]
-        var n = ratio[0];
-        var d = ratio[1];
-        var f = n / d;
-        var baseEtfreq = etfreq || 440 * Math.pow(2, ((base - 60)/12));
-        var etfreq = 440 * Math.pow(2, ((keyId - 60)/12));
-        var jiFreq = f * baseEtfreq;
-        var offset = 3986.3 * ((Math.log(jiFreq) / Math.LN10) - (Math.log(etfreq) / Math.LN10));
-
-        ee.emit('tuningSetPitch', [keyId, offset]);
-        break;
-    }
-  });
-}
-
-function Synth (audiolet, frequency) {
-  this.audiolet = audiolet;
-  this.frequency = frequency || 440;
-  AudioletGroup.apply(this, [this.audiolet, 1, 1]);
-  this.limiter = new Limiter(this.audiolet, 0.3);
-
-  //this.sine = new Sine(this.audiolet, frequency);
-  this.osc = new Triangle(this.audiolet, this.frequency);
-
-  this.lag = new Lag(this.audiolet, 0, 0.2);
-  this.gain = this.lag.value;
-  this.gainNode = new Gain(this.audiolet);
-
-  this.osc.connect(this.gainNode);
-  this.lag.connect(this.gainNode, 0, 1);
-  //this.limiter.connect(this.outputs[0]);
-  //this.gainNode.connect(this.outputs[0]);
-  this.gainNode.connect(this.limiter);
-  //this.gainNode.connect(this.outputs[0]);
-  //this.reverb.connect(this.limiter);
-  this.limiter.connect(this.audiolet.output);
-}
-extend(Synth, AudioletGroup);
-
-Synth.prototype.setFrequency = function(frequency) {
-  this.osc.frequency.setValue(frequency);
-}
-
 function updateSpectrum(audiolet) {
   var canvas = document.getElementById('fft');
   var ctx = canvas.getContext('2d');
@@ -120,44 +23,12 @@ function updateSpectrum(audiolet) {
   setTimeout("updateSpectrum()", 100);
 }
 
-function Note(pitch) {
-  this.pitch = pitch;
-  this.etfreq = 440 * Math.pow(2, ((this.pitch - 60)/12));
-  this.freq = this.etfreq;
-  this.synth = null;
-}
-
-Note.prototype.on = function() {
-  this.synth = this.synth || new Synth(audiolet, this.freq);
-  var f = this.getFrequency(this.pitch);
-  console.log("Note: " + this.pitch + ", Frequency: " + f);
-  var numNotes = Object.keys(keys.keyState).length;
-  var value = numNotes > 0 ? 0.8 / numNotes : 0.8;
-  this.synth.setFrequency(f);
-  this.synth.gain.setValue(value);
-  this.synth.connect(audiolet.output);
-}
-
-Note.prototype.off = function() {
-  this.synth.lag.lag.setValue(1);
-  this.synth.gain.setValue(0);
-  var lag = this.synth.lag.lag.getValue();
-  var that = this;
-  setTimeout(function() {
-    that.synth.remove();
-  }, lag * 1000);
-}
-
-Note.prototype.getFrequency = function() {
-  return this.freq;
-}
-
-Note.prototype.offsetFrequency = function(offset) {
-  this.freq = this.etfreq + offset;
-}
-
+/**
+ * @constructor
+ */
 function App() {
-  //this.audiolet = new Audiolet();
+  _.extend(this, Backbone.Events);
+
   this.audiolet = audiolet;
   this.notes = {};
   this.basePitchClass = 0;
@@ -165,15 +36,18 @@ function App() {
 
   keys = new Keyboard(6);
 
-  ee.addListener('noteOn', this.noteOn, this);
-  ee.addListener('noteOff', this.noteOff, this);
+  //ee.addListener('noteOn', this.noteOn, this);
+  //ee.addListener('noteOff', this.noteOff, this);
   ee.addListener('tuningSetPitch', this.tuningSetPitch, this);
   ee.addListener('basePitchClassSet', this.basePitchClassSet, this);
   ee.addListener('level', this.level, this);
 
-  $('body').prepend('<canvas id="fft" width="812" height="200"></canvas>');
+  keys.bind('noteOn', this.noteOn, this);
+  keys.bind('noteOff', this.noteOff, this);
 
-  // Load and render the mustache.
+    $('#page').prepend('<canvas id="fft" width="812" height="200"></canvas>');
+
+  // Load and render the mustache template.
   $.get('keyboard_info.ms', function(tmpl) {
     var rows = ['pitch', 'offset', 'ratio'];
     var headers = [];
@@ -187,23 +61,42 @@ function App() {
   });
   $('#keyboard').before('<div id="base-pitchclass">' + this.basePitchClass + '</div>');
 
-  /*
-  $.get('Fugue1.mid', function(midi) {
-console.dir(midi);
-    var t = this.responseText || "";
-    var ff = [];
-    var mx = t.length;
-    var scc= String.fromCharCode;
-    for (var z = 0; z < mx; z++) {
-      ff[z] = scc(t.charCodeAt(z) & 255);
-    }
-    midi = ff.join("");
 
-    console.log(midi);
-    var midiFile = MidiFile(midi);
-    console.log(midiFile);
+  $('#keyboard').before('<div id="controls"></div>');
+    // Load and render the mustache template.
+  $.get('controls.ms', function(tmpl) {
+    var controls = Mustache.to_html(tmpl, {knobs: ['attack', 'release']});
+    $('#controls').html(controls);
+    $(".ui-dial").dial({
+      min: 30,
+      max: 330,
+      value: 180,
+      unitsPerPixel: 0.25,
+      imageWidth: 80,
+      numImages: 41,
+      change: function(event, ui) {
+        var param = $(this).attr('id');
+        window.SynthSettings[param] = (ui.value / 100) - .29999;
+        console.log(event, ui);
+      }
+    });
+
+    $("#oscillator-radio").buttonset();
+    $("#oscillator-radio input" ).click(function() {
+      var wave = $(this).attr('id');
+      console.log("WAVE1 " + wave);
+      window.SynthSettings.wave = wave;
+      console.log(this);
+    });
+
+    $("#oscillator-radio2").buttonset();
+    $("#oscillator-radio2 input" ).click(function() {
+      var wave = $(this).attr('id');
+      console.log("WAVE2 " + wave);
+      window.SynthSettings.wave2 = wave;
+      console.log(this);
+    });
   });
-    */
 
     //var tuning = new Tunings();
     //tuning.setTuning('5-limit');
@@ -241,6 +134,13 @@ App.prototype.basePitchClassSet = function(pitchclass) {
   $('#base-pitchclass').html(pitchclass);
 }
 
+App.prototype.setParam = function(param, value) {
+  for (var key in this.notes) {
+    var note = this.notes[key];
+    note.synth.gain.setValue(value);
+  }
+}
+
 App.prototype.level = function(value) {
   /*
   value = value / 100.0;
@@ -253,8 +153,8 @@ App.prototype.level = function(value) {
 
 $(document).ready(function() {
   window.app = new App();
-
   updateSpectrum();
+
 /*
   $('body').append('<div id="controls"><div id="slider-vertical" style="height:200px;"></div></div>');
   $("#slider-vertical").slider({
@@ -272,17 +172,4 @@ $(document).ready(function() {
   $("#amount" ).val($("#slider-vertical").slider("value"));
 */
 
-/*
-  var socket = io.connect('http://localhost:8089');
-  socket.on('noteOn', function (data) {
-    ee.emit('noteOn', [data.pitch]);
-
-    setTimeout(function() {
-      ee.emit('noteOff', [data.pitch]);
-    }, 400);
-  });
-  socket.on('tuningSetPitch', function (data) {
-    ee.emit('tuningSetPitch', [data.pitch, data.offset]);
-  });
-  */
 });

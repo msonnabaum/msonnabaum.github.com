@@ -2,23 +2,48 @@
 <html>
   <head>
     <title></title>
-    <!--<script src="http://localhost:8089/socket.io/socket.io.js" type="text/javascript"></script>-->
-    <script src="vendor/jquery.js"></script>
-    <script src="vendor/jquery-ui/ui/jquery.ui.core.js"></script>
-    <script src="vendor/jquery-ui/ui/jquery.ui.widget.js"></script>
-    <script src="vendor/jquery-ui/ui/jquery.ui.mouse.js"></script>
-    <script src="vendor/jquery-ui/ui/jquery.ui.slider.js"></script>
-    <script src="vendor/mustache.js/mustache.js"></script>
-    <script src="vendor/mustache.js/jquery.mustache.js"></script>
-    <script src="vendor/EventEmitter/src/EventEmitter.js"></script>
-    <script src="vendor/Audiolet/src/audiolet/Audiolet.js" type="text/javascript"></script>
-    <script src="vendor/dsp.js/dsp.js" type="text/javascript"></script>
-    <script src=main.js type="text/javascript"></script>
-    <script src=keyboard.js type="text/javascript"></script>
+    <script src="vendor/LABjs/LAB.min.js"></script>
+    <script>
+    $LAB
+    .script("vendor/jquery.js")
+    .script("vendor/jquery-ui/ui/jquery.ui.core.js")
+    .script("vendor/jquery-ui/ui/jquery.ui.widget.js")
+    .script("vendor/jquery-ui/ui/jquery.ui.button.js")
+    .script("vendor/jquery-ui/ui/jquery.ui.mouse.js")
+    .script("vendor/jquery-ui/ui/jquery.ui.draggable.js")
+    .script("vendor/jquery-ui/ui/jquery.ui.slider.js")
+    .script("vendor/jquery.ui.dial.js")
+    .script("vendor/underscore/underscore-min.js")
+    .script("vendor/backbone/backbone.min.js")
+    .script("vendor/mustache.js/mustache.js")
+    .script("vendor/mustache.js/jquery.mustache.js")
+    .script("vendor/EventEmitter/src/EventEmitter.js")
+    .script("vendor/Audiolet/src/audiolet/Audiolet.js")
+    .script("vendor/dsp.js/dsp.js")
+    .script("app/Synth.js")
+    .script("app/Note.js")
+    .script("app/Tunings.js")
+    .script("app/Keyboard.js")
+    .script("http://localhost:8089/socket.io/socket.io.js").wait(function() {
+      var socket = io.connect('http://localhost:8089');
+      socket.on('noteOn', function (data) {
+        ee.emit('noteOn', [data.pitch]);
+
+        setTimeout(function() {
+          ee.emit('noteOff', [data.pitch]);
+        }, 400);
+      });
+      socket.on('tuningSetPitch', function (data) {
+        ee.emit('tuningSetPitch', [data.pitch, data.offset]);
+      });
+    })
+    .script("main.js")
+    </script>
     <link rel="stylesheet" href="vendor/normalize.css/normalize.css" type="text/css" media="screen" />
     <link rel="stylesheet" href="styles/style.css" type="text/css" media="screen" />
     <link rel="stylesheet" href="vendor/jquery-ui/themes/base/jquery.ui.all.css">
   </head>
   <body>
+    <div id="page"></div>
   </body>
 </html>
